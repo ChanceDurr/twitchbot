@@ -2,6 +2,13 @@ import os
 import sys
 from twitchio.ext import commands
 import random
+from phue import Bridge
+from rgbxy import Converter
+import webcolors
+
+bridge = Bridge(os.environ.get('BRIDGE_IP'))
+bridge.connect()
+converter = Converter()
 
 def restart():
     import sys
@@ -11,6 +18,17 @@ def restart():
 
     import os
     os.execv(sys.executable, ['python'] + sys.argv)
+
+def change_light_color(color):
+    try:
+        color_choice = webcolors.name_to_hex(color)
+    except:
+        color_choice = webcolors.name_to_hex('yellow')
+
+    settings = {'transitiontime': 1, 'on': True, 'bri': 254, 'xy': converter.hex_to_xy(color_choice.strip('#'))}
+    bridge.set_group(2, settings)
+
+
 
 
 bot = commands.Bot(
@@ -30,9 +48,13 @@ async def event_ready():
 @bot.event
 async def event_message(ctx):
     'Runs every time a message is sent in chat'
-
+    
     if ctx.author.name.lower() == os.environ.get('BOT_NICK').lower():
         return
+
+    if 'custom-reward-id' in ctx.tags.keys():
+        if ctx.tags['custom-reward-id'] == 'c97a0082-1237-4971-a05a-385189b1fa08':
+            change_light_color(ctx.content)
 
     await bot.handle_commands(ctx)
 
@@ -115,6 +137,10 @@ async def commands_command(ctx):
 @bot.command(name='coinflip')
 async def coinflip(ctx):
     await ctx.send(f"@{ctx.author.name} {'Heads' if random.randint(1, 2) == 1 else 'Tails'}")
+
+@bot.command(name='testing982')
+async def testing982(ctx):
+    await ctx.send('Hey!')
 
 
 if __name__ == '__main__':

@@ -7,8 +7,10 @@ verify_ssl = true
 pylint = "*"
 
 [packages]
-twitchop = "*"
 twitchio = "*"
+phue = "*"
+rgbxy = "*"
+webcolors = "*"
 
 [requires]
 python_version = "3.8"
