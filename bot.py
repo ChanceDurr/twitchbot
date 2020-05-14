@@ -28,9 +28,7 @@ def change_light_color(color):
     settings = {'transitiontime': 1, 'on': True, 'bri': 254, 'xy': converter.hex_to_xy(color_choice.strip('#'))}
     bridge.set_group(2, settings)
 
-
-
-
+# Bot credentials
 bot = commands.Bot(
     irc_token = os.environ.get('TMI_TOKEN'),
     client_id = os.environ.get('CLIENT_ID'),
@@ -38,6 +36,7 @@ bot = commands.Bot(
     prefix = os.environ.get('BOT_PREFIX'),
     initial_channels = [os.environ.get('CHANNEL')]
 )
+
 
 @bot.event
 async def event_ready():
@@ -58,7 +57,7 @@ async def event_message(ctx):
 
     await bot.handle_commands(ctx)
 
-@bot.command(name='commands')
+@bot.command(name='chaunceybot')
 async def commands_command(ctx):
     # Grab command message and split into list
     command_msg = ctx.content.split()
@@ -134,13 +133,47 @@ async def commands_command(ctx):
 
 #### COMMANDS ####
 
+@bot.command(name='restart')
+async def bot_restart(ctx):
+    if ctx.author.is_mod == True:
+        await ctx.send(f'@{ctx.author.name} --> ChaunceyBot has restarted!')
+        restart()
+    else:
+        await ctx.send(f'@{ctx.author.name} --> You do not have permission to use this command.')
+
 @bot.command(name='coinflip')
 async def coinflip(ctx):
     await ctx.send(f"@{ctx.author.name} {'Heads' if random.randint(1, 2) == 1 else 'Tails'}")
 
-@bot.command(name='testing982')
+@bot.command(name='braincells')
 async def testing982(ctx):
-    await ctx.send('Hey!')
+    bc = random.randint(0, 100001)
+    if len(ctx.content.split()) > 1:
+        if ctx.content.split()[1][0] == '@':
+            if ctx.content.split()[1].strip('@').lower() == 'itzchauncey':
+                bc = 1000000
+            await ctx.send(f'{ctx.content.split()[1]} has {bc} braincells!')
+    else:
+        if ctx.author.name.lower() == 'itzchauncey':
+            bc = 1000000
+
+        await ctx.send(f'@{ctx.author.name} has {bc} braincells!')
+
+@bot.command(name='riot')
+async def riot(ctx):
+    await ctx.send('itzchauncey#ttv')
+
+@bot.command(name='twitter')
+async def twitter(ctx):
+    await ctx.send('ItzChaunceyBoi on Twitter!')
+
+@bot.command(name='chance')
+async def chance(ctx):
+    await ctx.send('cool guy')
+
+@bot.command(name='rank')
+async def rank(ctx):
+    await ctx.send('plat 2')
 
 
 if __name__ == '__main__':
