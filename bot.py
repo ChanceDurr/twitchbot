@@ -1,10 +1,12 @@
 import os
 import sys
 from twitchio.ext import commands
+from twitchio.dataclasses import Channel
 import random
 from phue import Bridge
 from rgbxy import Converter
 import webcolors
+import asyncio
 
 bridge = Bridge(os.environ.get('BRIDGE_IP'))
 bridge.connect()
@@ -37,12 +39,12 @@ bot = commands.Bot(
     initial_channels = [os.environ.get('CHANNEL')]
 )
 
+channel = Channel(os.environ.get('CHANNEL'), bot._ws, 'https://www.twitch.tv/itzchauncey')
 
 @bot.event
 async def event_ready():
     'Called once the bot goes online'
     print(f"{os.environ.get('BOT_NICK')} is online")
-    ws = bot._ws
 
 @bot.event
 async def event_message(ctx):
@@ -56,6 +58,19 @@ async def event_message(ctx):
             change_light_color(ctx.content)
 
     await bot.handle_commands(ctx)
+
+@bot.event
+async def event_join(user):
+    print(dir(user))
+    print(user._mod)
+    text = f'Welcome to the channel @{user.name}, I am Chauncey\'s Personal Bot!'
+
+    bots = ['chaunceybot', 'tressino', 'streamelements', 'commanderroot',
+    'aten', 'nightbot', 'itzchauncey', 'feet', 'anotherttvviewer']
+    if user.name.lower().strip() in bots:
+        return
+
+    await channel.send(text)
 
 @bot.command(name='chaunceybot')
 async def commands_command(ctx):
@@ -77,7 +92,7 @@ async def commands_command(ctx):
             for line in f:
                 content.append(line)
 
-        command_exists = [i for i, x in enumerate(content) if x == f"@bot.command(name='{command_msg[2].lower()}')\n"]
+        command_exists = [i for i, x in enumerate(content) if x == f"@bot.command(name='{command_msg[2].lower().strip('!')}')\n"]
 
         if command_exists:
             await ctx.send(f'@{ctx.author.name} --> \"{command_msg[2].lower()}\" command already exists')
@@ -109,7 +124,7 @@ async def commands_command(ctx):
                 content.append(line)
 
         # Find where the command is within the file
-        start_delete = [i for i, x in enumerate(content) if x == f"@bot.command(name='{command_msg[2].lower()}')\n"]
+        start_delete = [i for i, x in enumerate(content) if x == f"@bot.command(name='{command_msg[2].lower().strip('!')}')\n"]
 
         # if command found, delete, else, dont attempt and tell user
         if start_delete:
@@ -173,7 +188,7 @@ async def chance(ctx):
 
 @bot.command(name='rank')
 async def rank(ctx):
-    await ctx.send('plat 2')
+    await ctx.send('Plat 3')
 
 
 if __name__ == '__main__':
