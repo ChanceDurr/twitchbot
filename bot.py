@@ -4,12 +4,14 @@ import json
 from twitchio.ext import commands
 from twitchio.ext.commands.errors import CommandNotFound, CommandError
 from twitchio.dataclasses import Channel
+from twitchio.client import Client
 import random
 from phue import Bridge
 from rgbxy import Converter
 import webcolors
 import asyncio
 import time
+import math
 
 bridge = Bridge(os.environ.get('BRIDGE_IP'))
 bridge.connect()
@@ -47,20 +49,35 @@ async def sub_colors():
 
     bridge.set_group(2, {'on': True, 'bri': 254, 'xy': converter.hex_to_xy('ffffff')})
 
-# Bot credentials
-bot = commands.Bot(
-    irc_token = os.environ.get('TMI_TOKEN'),
-    client_id = os.environ.get('CLIENT_ID'),
-    nick = os.environ.get('BOT_NICK'),
-    prefix = os.environ.get('BOT_PREFIX'),
-    initial_channels = [os.environ.get('CHANNEL')]
-)
 
-channel = Channel(os.environ.get('CHANNEL'), bot._ws, 'https://www.twitch.tv/itzchauncey')
+class myChannel(Channel):
+
+    def __init__(self):
+        super().__init__(
+            name = os.environ.get('CHANNEL'),
+            ws = bot._ws,
+            http = 'https://www.twitch.tv/itzchauncey'
+        )
+
+
+class myClient(Client):
+    def __init__(self):
+        super().__init__(
+            loop = None,
+            client_id = os.environ.get('CLIENT_ID')
+        )
+
+    # async def get_chatters(self, channel=os.environ.get('CHANNEL')):
+
+
 
 class ChaunceyBot(commands.Bot):
     
-    advanced_commands = ['!chaunceybot', '!braincells', '!coinflip']
+    # Advanced commands for command recognition
+    advanced_commands = ['!chaunceybot', '!braincells', '!coinflip', '!watchtime']
+
+    # List of users that were alreaady welcomed per stream
+    welcomed = []
 
     with open('simple_commands.json') as json_file:
             simple_commands = json.load(json_file)
@@ -81,6 +98,44 @@ class ChaunceyBot(commands.Bot):
     async def event_ready(self):
         'Called once the bot goes online'
         print(f"{os.environ.get('BOT_NICK')} is online")
+        await self.add_watchtime()
+        await self.add_points()
+
+    async def add_watchtime(self):
+        'Adds 1 minute to each user in channel every 1 minute to watchtime.json'
+        while True:
+            await asyncio.sleep(60)
+            chatters = await myClient.get_chatters(self, os.environ.get('CHANNEL'))
+            
+            with open('watchtime.json') as json_file:
+                data = json.load(json_file)
+
+            for user in chatters[1]:
+                if user in data['users']:
+                    data['users'][user] += 1
+                else:
+                    data['users'][user] = 0
+            
+            with open('watchtime.json', 'w') as json_file:
+                json.dump(data, json_file, indent=4)
+
+    async def add_points(self):
+        'Adds 10 points to each user in channel every 5 minute to watchtime.json'
+        while True:
+            await asyncio.sleep(10)
+            chatters = await myClient.get_chatters(self, os.environ.get('CHANNEL'))
+            
+            with open('points.json') as json_file:
+                data = json.load(json_file)
+
+            for user in chatters[1]:
+                if user in data['users']:
+                    data['users'][user] += 10
+                else:
+                    data['users'][user] = 0
+            
+            with open('watchtime.json', 'w') as json_file:
+                json.dump(data, json_file, indent=4)
 
     async def event_message(self, ctx):
         'Runs every time a message is sent in chat'
@@ -104,17 +159,16 @@ class ChaunceyBot(commands.Bot):
             else:
                 await self.handle_commands(ctx)
         
-    async def event_join(self, user):
+    # async def event_join(self, user):
 
-        text = f'Welcome to the channel @{user.name}, I am Chauncey\'s Personal Bot!'
+    #     text = f'Welcome to the channel @{user.name}, I am Chauncey\'s Personal Bot!'
 
-        bots = ['chaunceybot', 'tressino', 'streamelements', 'commanderroot',
-        'aten', 'nightbot', 'itzchauncey', 'feet', 'anotherttvviewer',
-        'commula', 'electricallongboard']
-        if user.name.lower().strip() in bots:
-            return
+    #     if user.name.lower().strip() in self.welcomed:
+    #         return
+    #     else:
+    #         self.welcomed.append(user.name.lower().strip())
 
-        await self.send_message(text)
+    #     await self.send_message(text)
 
     async def event_usernotice_subscription(self, data):
         await sub_colors()
@@ -172,8 +226,11 @@ class ChaunceyBot(commands.Bot):
             
             # Check if command exits
             if command_name in self.simple_commands.keys():
-                await ctx.send(f"@{ctx.author.name} --> There is no command with the name {command_name}")
+                self.simple_commands[command_name] = command_content
+                await ctx.send(f"@{ctx.author.name} -->  '{command_name}' updated")
                 return
+            else:
+                await ctx.send(f"@{ctx.author.name} --> There is no command with the name {command_name}")
             
             # Change command value
             self.simple_commands[command_name] = command_content
@@ -201,6 +258,49 @@ class ChaunceyBot(commands.Bot):
 
             await ctx.send(f'@{ctx.author.name} has {bc} braincells!')
 
+    @commands.command(name='watchtime')
+    async def watchtime(self, ctx):
+        w_command = ctx.content.split()
+        if len(w_command) == 1:
+            user = ctx.author.name
+        elif w_command[1][0] == '@':
+            user = w_command[1][1:].lower()
+            
+        with open('watchtime.json') as json_file:
+            data = json.load(json_file)
+
+        user_watchtime = data['users'][user]
+
+        days_raw = user_watchtime / 1440
+        days = math.floor(days_raw)
+
+        hours_raw = (days_raw - days) * 24
+        hours = math.floor(hours_raw)
+
+        minutes_raw = (hours_raw - hours) * 60
+        minutes = round(minutes_raw)
+
+        if days >= 1:
+            await ctx.send(f'@{user} has spent {days} days {hours} hours {minutes} minutes watching ItzChauncey')
+        elif hours >= 1:
+            await ctx.send(f'@{user} has spent {hours} hours {minutes} minutes watching ItzChauncey')
+        elif minutes >= 1:
+            await ctx.send(f'@{user} has spent {minutes} minutes watching ItzChauncey')
+        else:
+            await ctx.send(f'@{user} watchtime not found REEEEEE')
+
+    @commands.command(name='points')
+    async def points(self, ctx):
+        w_command = ctx.content.split()
+        if len(w_command) == 1:
+            user = ctx.author.name
+        elif w_command[1][0] == '@':
+            user = w_command[1][1:].lower()
+            
+        with open('points.json') as json_file:
+            data = json.load(json_file)
+
+        user_points = data['users'][user]
 
 bot = ChaunceyBot()
 bot.run()
