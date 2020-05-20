@@ -69,18 +69,7 @@ class myClient(Client):
 
     # async def get_chatters(self, channel=os.environ.get('CHANNEL')):
 
-
-
 class ChaunceyBot(commands.Bot):
-    
-    # Advanced commands for command recognition
-    advanced_commands = ['!chaunceybot', '!braincells', '!coinflip', '!watchtime']
-
-    # List of users that were alreaady welcomed per stream
-    welcomed = []
-
-    with open('simple_commands.json') as json_file:
-            simple_commands = json.load(json_file)
 
     def __init__(self):
         super().__init__(
@@ -91,15 +80,29 @@ class ChaunceyBot(commands.Bot):
             initial_channels = [os.environ.get('CHANNEL')]
             )
 
+    ### BOT SETUP ###
+    # Advanced commands for command recognition
+    advanced_commands = ['!chaunceybot', '!braincells', '!coinflip', '!watchtime']
+
+    # List of users that were already welcomed per stream
+    welcomed = []
+
+    # Load commands from json file
+    with open('simple_commands.json') as json_file:
+        simple_commands = json.load(json_file)
+    print('Commands Loaded')
+
+    ### COROUTINES ###
     async def send_message(self, text):
         ws = self._ws
         await ws.send_privmsg(os.environ.get('CHANNEL'), text)
+
 
     async def event_ready(self):
         'Called once the bot goes online'
         print(f"{os.environ.get('BOT_NICK')} is online")
         await self.add_watchtime()
-        await self.add_points()
+                    
 
     async def add_watchtime(self):
         'Adds 1 minute to each user in channel every 1 minute to watchtime.json'
@@ -118,6 +121,7 @@ class ChaunceyBot(commands.Bot):
             
             with open('watchtime.json', 'w') as json_file:
                 json.dump(data, json_file, indent=4)
+        
 
     async def add_points(self):
         'Adds 10 points to each user in channel every 5 minute to watchtime.json'
@@ -136,6 +140,7 @@ class ChaunceyBot(commands.Bot):
             
             with open('watchtime.json', 'w') as json_file:
                 json.dump(data, json_file, indent=4)
+
 
     async def event_message(self, ctx):
         'Runs every time a message is sent in chat'
@@ -159,26 +164,29 @@ class ChaunceyBot(commands.Bot):
             else:
                 await self.handle_commands(ctx)
         
-    # async def event_join(self, user):
 
-    #     text = f'Welcome to the channel @{user.name}, I am Chauncey\'s Personal Bot!'
+    async def event_join(self, user):
 
-    #     if user.name.lower().strip() in self.welcomed:
-    #         return
-    #     else:
-    #         self.welcomed.append(user.name.lower().strip())
+        text = f'Welcome to the channel @{user.name}, I am Chauncey\'s Personal Bot!'
 
-    #     await self.send_message(text)
+        if user.name.lower().strip() in self.welcomed:
+            return
+        else:
+            self.welcomed.append(user.name.lower().strip())
+
+        await self.send_message(text)
+
 
     async def event_usernotice_subscription(self, data):
         await sub_colors()
         await self.send_message(f'Thank you {data.user.name} for subscribing!')
 
+
     async def event_command_error(self, context, error):
         await context.send(error)
 
-    ### ADVANCED COMMANDS ###
 
+    ### ADVANCED COMMANDS ###
     @commands.command(name='chaunceybot')
     async def edit_commands(self, ctx):
         # Grab command message and split into list
@@ -240,9 +248,11 @@ class ChaunceyBot(commands.Bot):
         with open('simple_commands.json', 'w') as json_file:
             json.dump(self.simple_commands, json_file)
 
+
     @commands.command(name='coinflip')
     async def coinflip(self, ctx):
         await ctx.send(f"@{ctx.author.name} {'Heads' if random.randint(1, 2) == 1 else 'Tails'}")
+
 
     @commands.command(name='braincells')
     async def braincells(self, ctx):
@@ -257,6 +267,7 @@ class ChaunceyBot(commands.Bot):
                 bc = 1000000
 
             await ctx.send(f'@{ctx.author.name} has {bc} braincells!')
+
 
     @commands.command(name='watchtime')
     async def watchtime(self, ctx):
@@ -289,6 +300,7 @@ class ChaunceyBot(commands.Bot):
         else:
             await ctx.send(f'@{user} watchtime not found REEEEEE')
 
+
     @commands.command(name='points')
     async def points(self, ctx):
         w_command = ctx.content.split()
@@ -301,6 +313,7 @@ class ChaunceyBot(commands.Bot):
             data = json.load(json_file)
 
         user_points = data['users'][user]
+
 
 bot = ChaunceyBot()
 bot.run()
