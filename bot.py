@@ -1,17 +1,21 @@
 import os
 import sys
 import json
+import random
+import time
+import math
+import asyncio
+
 from twitchio.ext import commands
 from twitchio.ext.commands.errors import CommandNotFound, CommandError
 from twitchio.dataclasses import Channel
 from twitchio.client import Client
-import random
+
 from phue import Bridge
 from rgbxy import Converter
 import webcolors
-import asyncio
-import time
-import math
+
+
 
 bridge = Bridge(os.environ.get('BRIDGE_IP'))
 bridge.connect()
@@ -67,7 +71,6 @@ class myClient(Client):
             client_id = os.environ.get('CLIENT_ID')
         )
 
-    # async def get_chatters(self, channel=os.environ.get('CHANNEL')):
 
 class ChaunceyBot(commands.Bot):
 
@@ -82,7 +85,7 @@ class ChaunceyBot(commands.Bot):
 
     ### BOT SETUP ###
     # Advanced commands for command recognition
-    advanced_commands = ['!chaunceybot', '!braincells', '!coinflip', '!watchtime']
+    advanced_commands = ['!chaunceybot', '!braincells', '!coinflip', '!watchtime', '!points']
 
     # List of users that were already welcomed per stream
     welcomed = []
@@ -92,7 +95,7 @@ class ChaunceyBot(commands.Bot):
         simple_commands = json.load(json_file)
     print('Commands Loaded')
 
-    ### COROUTINES ###
+    ### COROUTINES/TASKS ###
     async def send_message(self, text):
         ws = self._ws
         await ws.send_privmsg(os.environ.get('CHANNEL'), text)
@@ -101,11 +104,13 @@ class ChaunceyBot(commands.Bot):
     async def event_ready(self):
         'Called once the bot goes online'
         print(f"{os.environ.get('BOT_NICK')} is online")
-        await self.add_watchtime()
-                    
+        self.loop.create_task(self.add_watchtime())
+        self.loop.create_task(self.add_points())
+
 
     async def add_watchtime(self):
         'Adds 1 minute to each user in channel every 1 minute to watchtime.json'
+        print('Started watchtime counter')
         while True:
             await asyncio.sleep(60)
             chatters = await myClient.get_chatters(self, os.environ.get('CHANNEL'))
@@ -125,8 +130,9 @@ class ChaunceyBot(commands.Bot):
 
     async def add_points(self):
         'Adds 10 points to each user in channel every 5 minute to watchtime.json'
+        print('Started point counter')
         while True:
-            await asyncio.sleep(10)
+            await asyncio.sleep(300)
             chatters = await myClient.get_chatters(self, os.environ.get('CHANNEL'))
             
             with open('points.json') as json_file:
@@ -138,7 +144,7 @@ class ChaunceyBot(commands.Bot):
                 else:
                     data['users'][user] = 0
             
-            with open('watchtime.json', 'w') as json_file:
+            with open('points.json', 'w') as json_file:
                 json.dump(data, json_file, indent=4)
 
 
@@ -180,6 +186,10 @@ class ChaunceyBot(commands.Bot):
     async def event_usernotice_subscription(self, data):
         await sub_colors()
         await self.send_message(f'Thank you {data.user.name} for subscribing!')
+
+
+    async def event_raw_usernotice(self):
+        pass
 
 
     async def event_command_error(self, context, error):
