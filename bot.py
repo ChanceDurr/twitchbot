@@ -45,9 +45,6 @@ class ChaunceyBot(commands.Bot):
     # Advanced commands for command recognition
     advanced_commands = ['!chaunceybot', '!braincells', '!coinflip', '!watchtime', '!points']
 
-    # List of users that were already welcomed per stream
-    welcomed = []
-
     # Load commands from json file
     with open('simple_commands.json') as json_file:
         simple_commands = json.load(json_file)
@@ -67,37 +64,31 @@ class ChaunceyBot(commands.Bot):
 
 
     async def add_watchtime(self):
-        'Adds 1 minute to each user in channel every 1 minute to watchtime.json'
+        'Adds 1 minute to each user in channel every 1 minute to watchtime table'
         print('Started watchtime counter')
         while True:
             await asyncio.sleep(60)
             chatters = await myClient.get_chatters(self, os.environ.get('CHANNEL'))
             
             for user in chatters[1]:
-                if check_user(user, 'watchtime'):
-                    update_user(user, 'watchtime', 1)
+                if db.check_user(user, 'watchtime'):
+                    db.update_user(user, 'watchtime', 1)
                 else:
-                    add_user(user, 'watchtime')
+                    db.add_user(user, 'watchtime')
         
 
     async def add_points(self):
-        'Adds 10 points to each user in channel every 5 minute to watchtime.json'
+        'Adds 10 points to each user in channel every 5 minute to points table'
         print('Started point counter')
         while True:
             await asyncio.sleep(300)
             chatters = await myClient.get_chatters(self, os.environ.get('CHANNEL'))
-            
-            with open('points.json') as json_file:
-                data = json.load(json_file)
 
             for user in chatters[1]:
-                if user in data['users']:
-                    data['users'][user] += 10
+                if db.check_user(user, 'points'):
+                    db.update_user(user, 'points', 1)
                 else:
-                    data['users'][user] = 0
-            
-            with open('points.json', 'w') as json_file:
-                json.dump(data, json_file, indent=4)
+                    db.add_user(user, 'points')
 
 
     async def event_message(self, ctx):
@@ -123,10 +114,8 @@ class ChaunceyBot(commands.Bot):
 
         text = f'Welcome to the channel @{user.name}, I am Chauncey\'s Personal Bot!'
 
-        if user.name.lower().strip() in self.welcomed:
+        if user.name.lower().strip() in db.get_users():
             return
-        else:
-            self.welcomed.append(user.name.lower().strip())
 
         await self.send_message(text)
 
@@ -145,6 +134,9 @@ class ChaunceyBot(commands.Bot):
     async def edit_commands(self, ctx):
         # Grab command message and split into list
         command_msg = ctx.content.split()
+        if len(command_msg) < 2:
+            await ctx.send(f"@{ctx.author.name} --> try using add/edit/delete (!chaunceybot add !command message)")
+            return
         command_type = command_msg[1].lower()
         command_name = command_msg[2].lower().strip('!')
         command_content = ' '.join(command_msg[3:])
@@ -225,11 +217,8 @@ class ChaunceyBot(commands.Bot):
             user = ctx.author.name
         elif w_command[1][0] == '@':
             user = w_command[1][1:].lower()
-            
-        with open('watchtime.json') as json_file:
-            data = json.load(json_file)
 
-        user_watchtime = data['users'][user]
+        user_watchtime = db.get_info(user, 'watchtime')
 
         days_raw = user_watchtime / 1440
         days = math.floor(days_raw)
@@ -240,14 +229,24 @@ class ChaunceyBot(commands.Bot):
         minutes_raw = (hours_raw - hours) * 60
         minutes = round(minutes_raw)
 
-        if days >= 1:
-            await ctx.send(f'@{user} has spent {days} days {hours} hours {minutes} minutes watching ItzChauncey')
-        elif hours >= 1:
-            await ctx.send(f'@{user} has spent {hours} hours {minutes} minutes watching ItzChauncey')
-        elif minutes >= 1:
-            await ctx.send(f'@{user} has spent {minutes} minutes watching ItzChauncey')
+        if user == ctx.author.name:
+            if days >= 1:
+                await ctx.send(f'@{user} has spent {days} days {hours} hours {minutes} minutes watching ItzChauncey')
+            elif hours >= 1:
+                await ctx.send(f'@{user} has spent {hours} hours {minutes} minutes watching ItzChauncey')
+            elif minutes >= 1:
+                await ctx.send(f'@{user} has spent {minutes} minutes watching ItzChauncey')
+            else:
+                await ctx.send(f'@{user} watchtime not found REEEEEE')
         else:
-            await ctx.send(f'@{user} watchtime not found REEEEEE')
+            if days >= 1:
+                await ctx.send(f'@{ctx.author.name} --> {user} has spent {days} days {hours} hours {minutes} minutes watching ItzChauncey')
+            elif hours >= 1:
+                await ctx.send(f'@{ctx.author.name} --> {user} has spent {hours} hours {minutes} minutes watching ItzChauncey')
+            elif minutes >= 1:
+                await ctx.send(f'@{ctx.author.name} --> {user} has spent {minutes} minutes watching ItzChauncey')
+            else:
+                await ctx.send(f'@{ctx.author.name} --> {user} watchtime not found REEEEEE')
 
 
     @commands.command(name='points')
@@ -257,11 +256,12 @@ class ChaunceyBot(commands.Bot):
             user = ctx.author.name
         elif w_command[1][0] == '@':
             user = w_command[1][1:].lower()
-            
-        with open('points.json') as json_file:
-            data = json.load(json_file)
 
-        user_points = data['users'][user]
+        user_points = db.get_info(user, 'points')
+        if user == ctx.author.name:
+            await ctx.send(f"@{user} --> You have {user_points} points!")
+        else:
+            await ctx.send(f"@{ctx.author.name} --> {user} has {user_points} points!")
 
 
 bot = ChaunceyBot()

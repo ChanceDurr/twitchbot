@@ -32,6 +32,7 @@ def commit(conn, cur):
     conn.close()
 
 
+### WATCHTIME/POINTS ###
 def check_user(name, table, conn=None, cur=None):
     '''Check if name is in table, return true or false'''
     conn, cur = (conn, cur) if conn and cur else connect()
@@ -85,7 +86,16 @@ def update_user(name, table, amount: int, conn=None, cur=None):
 
     commit(conn, cur)
 
+def get_users(conn=None, cur=None):
+    '''Get all users that have watchtime'''
+    conn, cur = (conn, cur) if conn and cur else connect()
+    cur.execute("SELECT name FROM watchtime")
+    result = [x[0] for x in cur.fetchall()]
+    commit(conn, cur)
+    return result
 
+
+### COMMANDS ###
 def add_command(command_name, command_message, conn=None, cur=None):
     '''Add a simple command'''
     conn, cur = (conn, cur) if conn and cur else connect()
@@ -111,7 +121,7 @@ def delete_command(command_name, conn=None, cur=None):
 def check_command(command_name, conn=None, cur=None):
     '''Check to see if a simple command exists'''
     conn, cur = (conn, cur) if conn and cur else connect()
-    cur.execute(f"SELECT COUNT(*) WHERE name = '{command_name.lower()}'")
+    cur.execute(f"SELECT COUNT(*) FROM commands WHERE name = '{command_name.lower()}'")
     result = cur.fetchone()
     commit(conn, cur)
     if result[0] == 1:
