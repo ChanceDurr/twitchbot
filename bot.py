@@ -65,11 +65,12 @@ class ChaunceyBot(commands.Bot):
             await asyncio.sleep(60)
             chatters = await myClient.get_chatters(self, os.environ.get('CHANNEL'))
             
-            for user in chatters[1]:
-                if db.check_user(user, 'watchtime'):
-                    db.update_user(user, 'watchtime', 1)
-                else:
-                    db.add_user(user, 'watchtime')
+            if myClient.get_stream(self, 'itzchauncey'):
+                for user in chatters[1]:
+                    if db.check_user(user, 'watchtime'):
+                        db.update_user(user, 'watchtime', 1)
+                    else:
+                        db.add_user(user, 'watchtime')
         
 
     async def add_points(self):
@@ -79,11 +80,12 @@ class ChaunceyBot(commands.Bot):
             await asyncio.sleep(300)
             chatters = await myClient.get_chatters(self, os.environ.get('CHANNEL'))
 
-            for user in chatters[1]:
-                if db.check_user(user, 'points'):
-                    db.update_user(user, 'points', 1)
-                else:
-                    db.add_user(user, 'points')
+            if myClient.get_stream(self, 'itzchauncey'):
+                for user in chatters[1]:
+                    if db.check_user(user, 'points'):
+                        db.update_user(user, 'points', 1)
+                    else:
+                        db.add_user(user, 'points')
 
 
     async def event_message(self, ctx):
