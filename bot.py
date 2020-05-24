@@ -65,7 +65,7 @@ class ChaunceyBot(commands.Bot):
             await asyncio.sleep(60)
             chatters = await myClient.get_chatters(self, os.environ.get('CHANNEL'))
             
-            if myClient.get_stream(self, 'itzchauncey'):
+            if await myClient.get_stream(self, 'itzchauncey'):
                 for user in chatters[1]:
                     if db.check_user(user, 'watchtime'):
                         db.update_user(user, 'watchtime', 1)
@@ -80,7 +80,7 @@ class ChaunceyBot(commands.Bot):
             await asyncio.sleep(300)
             chatters = await myClient.get_chatters(self, os.environ.get('CHANNEL'))
 
-            if myClient.get_stream(self, 'itzchauncey'):
+            if await myClient.get_stream(self, 'itzchauncey'):
                 for user in chatters[1]:
                     if db.check_user(user, 'points'):
                         db.update_user(user, 'points', 1)

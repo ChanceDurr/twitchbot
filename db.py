@@ -110,7 +110,7 @@ def add_command(command_name, command_message, conn=None, cur=None):
 def delete_command(command_name, conn=None, cur=None):
     '''Delete a simple command'''
     conn, cur = (conn, cur) if conn and cur else connect()
-    if check_command(check_command):
+    if check_command(command_name):
         cur.execute(f"DELETE FROM commands WHERE name = '{command_name.lower()}'")
     else:
         commit(conn, cur)
