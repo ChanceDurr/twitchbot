@@ -5,45 +5,12 @@ import random
 import time
 import math
 import asyncio
+import db
 
 from twitchio.ext import commands
 from twitchio.ext.commands.errors import CommandNotFound, CommandError
 from twitchio.dataclasses import Channel
 from twitchio.client import Client
-
-from phue import Bridge
-from rgbxy import Converter
-import webcolors
-
-
-
-# bridge = Bridge(os.environ.get('BRIDGE_IP'))
-# bridge.connect()
-# converter = Converter()
-
-# def change_light_color(color):
-#     try:
-#         color_choice = webcolors.name_to_hex(color)
-#     except:
-#         color_choice = webcolors.name_to_hex('yellow')
-
-#     settings = {'transitiontime': 1, 'on': True, 'bri': 254, 'xy': converter.hex_to_xy(color_choice.strip('#'))}
-#     bridge.set_group(2, settings)
-
-# async def sub_colors():
-#     colors = [
-#         {'on': True, 'bri': 254, 'xy': converter.hex_to_xy('ff0000')},
-#         {'on': True, 'bri': 254, 'xy': converter.hex_to_xy('0000ff')},
-#         {'on': True, 'bri': 254, 'xy': converter.hex_to_xy('00ff00')},
-#         {'on': True, 'bri': 254, 'xy': converter.hex_to_xy('ffff00')}
-#     ]
-#     colors = colors * 4
-#     for color in colors:
-#         bridge.set_group(2, color)
-#         await asyncio.sleep(.5)
-
-#     bridge.set_group(2, {'on': True, 'bri': 254, 'xy': converter.hex_to_xy('ffffff')})
-
 
 class myChannel(Channel):
 
@@ -106,17 +73,11 @@ class ChaunceyBot(commands.Bot):
             await asyncio.sleep(60)
             chatters = await myClient.get_chatters(self, os.environ.get('CHANNEL'))
             
-            with open('watchtime.json') as json_file:
-                data = json.load(json_file)
-
             for user in chatters[1]:
-                if user in data['users']:
-                    data['users'][user] += 1
+                if check_user(user, 'watchtime'):
+                    update_user(user, 'watchtime', 1)
                 else:
-                    data['users'][user] = 0
-            
-            with open('watchtime.json', 'w') as json_file:
-                json.dump(data, json_file, indent=4)
+                    add_user(user, 'watchtime')
         
 
     async def add_points(self):
@@ -145,10 +106,6 @@ class ChaunceyBot(commands.Bot):
         
         if ctx.author.name.lower() == os.environ.get('BOT_NICK').lower():
             return
-
-        # if 'custom-reward-id' in ctx.tags.keys():
-        #     if ctx.tags['custom-reward-id'] == 'c97a0082-1237-4971-a05a-385189b1fa08':
-        #         change_light_color(ctx.content)
 
         if ctx.content[0] == '!':
             message = ctx.content.lower().split()
@@ -197,53 +154,48 @@ class ChaunceyBot(commands.Bot):
             await ctx.send(f'@{ctx.author} --> You don\'t have permission')
             return
 
+
         # Adding a command
         if command_type == 'add':
             
             # Check if command exists
-            if command_name in self.simple_commands.keys():
+            if db.check_command(command_name):
                 await ctx.send(f"@{ctx.author.name} --> That command already exists")
                 return
 
-            # Add the command to the simple_commands dict
-            self.simple_commands[command_name] = command_content
+            # Add the command to the commands table
+            db.add_command(command_name, command_content)
             
             # Verify creation of command
             await ctx.send(f'@{ctx.author.name} --> The {command_name} command has been created!')
+
 
         # Deleting Commands
         if command_type[:3] == 'del':
 
             # Check if command exists
-            if command_name not in self.simple_commands.keys():
+            if db.check_command(command_name):
+                # Delete the command
+                db.delete_command(command_name)
+
+                # Verify deletion of command
+                await ctx.send(f'@{ctx.author.name} --> The {command_name} command has been deleted!')
+            else:
                 await ctx.send(f"@{ctx.author.name} --> There is no command with the name {command_name}")
                 return
             
-            # Delete the command
-            del self.simple_commands[command_name]
-            
-            # Verify deletion of command
-            await ctx.send(f'@{ctx.author.name} --> The {command_name} command has been deleted!')
-
 
         # Editing Commands
         if command_type == 'edit':
             
             # Check if command exits
-            if command_name in self.simple_commands.keys():
-                self.simple_commands[command_name] = command_content
+            if db.check_command(command_name):
+                db.edit_command(command_name, command_content)
                 await ctx.send(f"@{ctx.author.name} -->  '{command_name}' updated")
                 return
             else:
                 await ctx.send(f"@{ctx.author.name} --> There is no command with the name {command_name}")
-            
-            # Change command value
-            self.simple_commands[command_name] = command_content
 
-
-        # Update the json
-        with open('simple_commands.json', 'w') as json_file:
-            json.dump(self.simple_commands, json_file)
 
 
     @commands.command(name='coinflip')
