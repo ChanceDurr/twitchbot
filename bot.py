@@ -45,11 +45,6 @@ class ChaunceyBot(commands.Bot):
     # Advanced commands for command recognition
     advanced_commands = ['!chaunceybot', '!braincells', '!coinflip', '!watchtime', '!points']
 
-    # Load commands from json file
-    with open('simple_commands.json') as json_file:
-        simple_commands = json.load(json_file)
-    print('Commands Loaded')
-
     ### COROUTINES/TASKS ###
     async def send_message(self, text):
         ws = self._ws
@@ -102,8 +97,8 @@ class ChaunceyBot(commands.Bot):
             message = ctx.content.lower().split()
             command = message[0].strip('!')
             if message[0] not in self.advanced_commands:
-                if command in self.simple_commands.keys():
-                    await self.send_message(self.simple_commands[command])
+                if command in db.get_all_commands():
+                    await self.send_message(db.get_command(command))
                 else:
                     await self.send_message(f'@{ctx.author.name} --> Command "{command}" not recognized.')
             else:

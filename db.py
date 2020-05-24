@@ -138,7 +138,7 @@ def edit_command(command_name, command_message, conn=None, cur=None):
     commit(conn, cur)
 
 
-def get_command(command_name, command_message, conn=None, cur=None):
+def get_command(command_name, conn=None, cur=None):
     '''Returns command message'''
     conn, cur = (conn, cur) if conn and cur else connect()
     if check_command(command_name):
@@ -147,3 +147,11 @@ def get_command(command_name, command_message, conn=None, cur=None):
     msg = cur.fetchone()[1]
     commit(conn, cur)
     return msg
+
+def get_all_commands(conn=None, cur=None):
+    '''Returns all command names'''
+    conn, cur = (conn, cur) if conn and cur else connect()
+    cur.execute("SELECT * FROM commands")
+    commands = [x[0] for x in cur.fetchall()]
+    commit(conn, cur)
+    return commands
