@@ -21,15 +21,6 @@ bridge = Bridge(os.environ.get('BRIDGE_IP'))
 bridge.connect()
 converter = Converter()
 
-def restart():
-    import sys
-    print("argv was",sys.argv)
-    print("sys.executable was", sys.executable)
-    print("restart now")
-
-    import os
-    os.execv(sys.executable, ['python'] + sys.argv)
-
 def change_light_color(color):
     try:
         color_choice = webcolors.name_to_hex(color)
@@ -186,10 +177,6 @@ class ChaunceyBot(commands.Bot):
     async def event_usernotice_subscription(self, data):
         await sub_colors()
         await self.send_message(f'Thank you {data.user.name} for subscribing!')
-
-
-    async def event_raw_usernotice(self):
-        pass
 
 
     async def event_command_error(self, context, error):

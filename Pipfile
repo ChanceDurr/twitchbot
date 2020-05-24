@@ -11,6 +11,7 @@ twitchio = "*"
 phue = "*"
 rgbxy = "*"
 webcolors = "*"
+gunicorn = "*"
 
 [requires]
 python_version = "3.8"
