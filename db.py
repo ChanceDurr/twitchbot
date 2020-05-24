@@ -93,7 +93,7 @@ def add_command(command_name, command_message, conn=None, cur=None):
         commit(conn, cur)
         return 'Command Exists'
     else:
-        cur.execute(f"INSERT INTO commands ('{command_name.lower()}', '{command_message}')")
+        cur.execute(f"INSERT INTO commands VALUES('{command_name.lower()}', '{command_message}')")
     commit(conn, cur)
 
 
