@@ -1,1 +1,1 @@
-web: gunicorn bot:app
+worker: pipenv run python bot.py

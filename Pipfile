@@ -12,6 +12,7 @@ phue = "*"
 rgbxy = "*"
 webcolors = "*"
 gunicorn = "*"
+flask = "*"
 
 [requires]
 python_version = "3.8"
