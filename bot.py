@@ -17,32 +17,32 @@ import webcolors
 
 
 
-bridge = Bridge(os.environ.get('BRIDGE_IP'))
-bridge.connect()
-converter = Converter()
+# bridge = Bridge(os.environ.get('BRIDGE_IP'))
+# bridge.connect()
+# converter = Converter()
 
-def change_light_color(color):
-    try:
-        color_choice = webcolors.name_to_hex(color)
-    except:
-        color_choice = webcolors.name_to_hex('yellow')
+# def change_light_color(color):
+#     try:
+#         color_choice = webcolors.name_to_hex(color)
+#     except:
+#         color_choice = webcolors.name_to_hex('yellow')
 
-    settings = {'transitiontime': 1, 'on': True, 'bri': 254, 'xy': converter.hex_to_xy(color_choice.strip('#'))}
-    bridge.set_group(2, settings)
+#     settings = {'transitiontime': 1, 'on': True, 'bri': 254, 'xy': converter.hex_to_xy(color_choice.strip('#'))}
+#     bridge.set_group(2, settings)
 
-async def sub_colors():
-    colors = [
-        {'on': True, 'bri': 254, 'xy': converter.hex_to_xy('ff0000')},
-        {'on': True, 'bri': 254, 'xy': converter.hex_to_xy('0000ff')},
-        {'on': True, 'bri': 254, 'xy': converter.hex_to_xy('00ff00')},
-        {'on': True, 'bri': 254, 'xy': converter.hex_to_xy('ffff00')}
-    ]
-    colors = colors * 4
-    for color in colors:
-        bridge.set_group(2, color)
-        await asyncio.sleep(.5)
+# async def sub_colors():
+#     colors = [
+#         {'on': True, 'bri': 254, 'xy': converter.hex_to_xy('ff0000')},
+#         {'on': True, 'bri': 254, 'xy': converter.hex_to_xy('0000ff')},
+#         {'on': True, 'bri': 254, 'xy': converter.hex_to_xy('00ff00')},
+#         {'on': True, 'bri': 254, 'xy': converter.hex_to_xy('ffff00')}
+#     ]
+#     colors = colors * 4
+#     for color in colors:
+#         bridge.set_group(2, color)
+#         await asyncio.sleep(.5)
 
-    bridge.set_group(2, {'on': True, 'bri': 254, 'xy': converter.hex_to_xy('ffffff')})
+#     bridge.set_group(2, {'on': True, 'bri': 254, 'xy': converter.hex_to_xy('ffffff')})
 
 
 class myChannel(Channel):
@@ -146,9 +146,9 @@ class ChaunceyBot(commands.Bot):
         if ctx.author.name.lower() == os.environ.get('BOT_NICK').lower():
             return
 
-        if 'custom-reward-id' in ctx.tags.keys():
-            if ctx.tags['custom-reward-id'] == 'c97a0082-1237-4971-a05a-385189b1fa08':
-                change_light_color(ctx.content)
+        # if 'custom-reward-id' in ctx.tags.keys():
+        #     if ctx.tags['custom-reward-id'] == 'c97a0082-1237-4971-a05a-385189b1fa08':
+        #         change_light_color(ctx.content)
 
         if ctx.content[0] == '!':
             message = ctx.content.lower().split()
@@ -175,7 +175,7 @@ class ChaunceyBot(commands.Bot):
 
 
     async def event_usernotice_subscription(self, data):
-        await sub_colors()
+        # await sub_colors()
         await self.send_message(f'Thank you {data.user.name} for subscribing!')
 
 
