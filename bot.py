@@ -41,9 +41,6 @@ class ChaunceyBot(commands.Bot):
             initial_channels = [os.environ.get('CHANNEL')]
             )
 
-    ### BOT SETUP ###
-    # Advanced commands for command recognition
-    advanced_commands = ['!chaunceybot', '!braincells', '!coinflip', '!watchtime', '!points']
 
     ### COROUTINES/TASKS ###
     async def send_message(self, text):
@@ -90,7 +87,8 @@ class ChaunceyBot(commands.Bot):
 
     async def event_message(self, ctx):
         'Runs every time a message is sent in chat'
-        
+        # advance commands list
+        advanced_commands = ['!chaunceybot', '!braincells', '!coinflip', '!watchtime', '!points']
         
         if ctx.author.name.lower() == os.environ.get('BOT_NICK').lower():
             return
@@ -98,7 +96,7 @@ class ChaunceyBot(commands.Bot):
         if ctx.content[0] == '!':
             message = ctx.content.lower().split()
             command = message[0].strip('!')
-            if message[0] not in self.advanced_commands:
+            if message[0] not in advanced_commands:
                 if command in db.get_all_commands():
                     await self.send_message(db.get_command(command))
                 else:
@@ -184,7 +182,6 @@ class ChaunceyBot(commands.Bot):
                 return
             else:
                 await ctx.send(f"@{ctx.author.name} --> There is no command with the name {command_name}")
-
 
 
     @commands.command(name='coinflip')
