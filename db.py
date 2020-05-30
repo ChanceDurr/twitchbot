@@ -155,3 +155,11 @@ def get_all_commands(conn=None, cur=None):
     commands = [x[0] for x in cur.fetchall()]
     commit(conn, cur)
     return commands
+
+def get_all_commands_desc(conn=None, cur=None):
+    '''Returns all command names'''
+    conn, cur = (conn, cur) if conn and cur else connect()
+    cur.execute("SELECT * FROM commands")
+    commands = [x for x in cur.fetchall()]
+    commit(conn, cur)
+    return commands
