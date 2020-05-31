@@ -12,36 +12,31 @@ from twitchio.ext.commands.errors import CommandNotFound, CommandError
 from twitchio.dataclasses import Channel
 from twitchio.client import Client
 
-class myChannel(Channel):
-
-    def __init__(self):
-        super().__init__(
-            name = os.environ.get('CHANNEL'),
-            ws = bot._ws,
-            http = 'https://www.twitch.tv/itzchauncey'
-        )
-
-
-class myClient(Client):
-    def __init__(self):
-        super().__init__(
-            loop = None,
-            client_id = os.environ.get('CLIENT_ID'),
-            client_secret = os.environ.get('CLIENT_SECRET'),
-            api_token = os.environ.get("API_TOKEN")
-        )
-
 
 class ChaunceyBot(commands.Bot):
 
     def __init__(self):
         super().__init__(
-            irc_token = os.environ.get('TMI_TOKEN'),
+            irc_token = os.environ.get('IRC_TOKEN'),
             client_id = os.environ.get('CLIENT_ID'),
             nick = os.environ.get('BOT_NICK'),
             prefix = os.environ.get('BOT_PREFIX'),
-            initial_channels = [os.environ.get('CHANNEL')]
-            )
+            initial_channels = [os.environ.get('CHANNEL')],
+            api_token = os.environ.get('API_TOKEN'),
+            scopes = [
+                'analytics:read:extensions',
+                'analytics:read:games',
+                'bits:read',
+                'channel:edit:commercial',
+                'channel:read:subscriptions',
+                'clips:edit',
+                'user:edit',
+                'user:edit:broadcast',
+                'user:edit:follows',
+                'user:read:broadcast',
+                'user:read:email'
+            ]
+        )
 
 
     ### COROUTINES/TASKS ###
@@ -62,9 +57,9 @@ class ChaunceyBot(commands.Bot):
         print('Started watchtime counter')
         while True:
             await asyncio.sleep(60)
-            chatters = await myClient.get_chatters(self, os.environ.get('CHANNEL'))
+            chatters = await self.get_chatters(os.environ.get('CHANNEL'))
             
-            if await myClient.get_stream(self, 'itzchauncey'):
+            if await self.get_stream('itzchauncey'):
                 for user in chatters[1]:
                     if db.check_user(user, 'watchtime'):
                         db.update_user(user, 'watchtime', 1)
@@ -77,12 +72,12 @@ class ChaunceyBot(commands.Bot):
         print('Started point counter')
         while True:
             await asyncio.sleep(300)
-            chatters = await myClient.get_chatters(self, os.environ.get('CHANNEL'))
+            chatters = await self.get_chatters(os.environ.get('CHANNEL'))
 
-            if await myClient.get_stream(self, 'itzchauncey'):
+            if await self.get_stream('itzchauncey'):
                 for user in chatters[1]:
                     if db.check_user(user, 'points'):
-                        db.update_user(user, 'points', 1)
+                        db.update_user(user, 'points', 10)
                     else:
                         db.add_user(user, 'points')
 
