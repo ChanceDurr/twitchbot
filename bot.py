@@ -28,7 +28,7 @@ class myClient(Client):
             loop = None,
             client_id = os.environ.get('CLIENT_ID'),
             client_secret = os.environ.get('CLIENT_SECRET'),
-            api_token = os.environ.get("TMI_TOKEN")
+            api_token = os.environ.get("API_TOKEN")
         )
 
 
